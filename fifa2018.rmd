@@ -472,6 +472,7 @@ gg6 <- ggplot(aes(x=Potential, y=num_Value), data = fifa ) +
   geom_smooth()
 #gg6
 ggplotly(gg6)
+rm(gg6)
 ```
 
 <br>
@@ -541,12 +542,19 @@ rm(gg10)
 
 gg11 <- ggplot(aes(x=Potential, y=Overall), data = fifa ) +
   geom_jitter(alpha = 0.1, shape=21) +
+  geom_abline() +
   geom_smooth()
 #gg8
 ggplotly(gg11)
 rm(gg11)
 
 ```
+
+<br>
+The darkest points lie on x=y ab line, meaning that these players have attained their potential. Interestilngly there are many points below this line. These players are worth looking into.
+<hr>
+
+
 
 # Bivariate Analysis
 
