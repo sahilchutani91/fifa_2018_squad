@@ -1,0 +1,635 @@
+SQUAD OF FIFA 2018 by SAHIL CHUTANI
+========================================================
+
+# Introduction
+
+Where do most of the players in FIFA 2018 come from? Is it South America or Europe? What is the most common age of the players listed in FIFA 2018? What is the age range of players? What is the distribution of their performance? These are the questions I would like to find an answer for through Exploratory Data Analysis. I will make use of the ggplot2 library that I learnt in the lesson coupled with plotly for interactive visualization.
+
+# Dataset
+
+The dataset features every player in Fifa 2018 with 70+ attributes. It contains personal attributes like Nationality, Photo, Club Age, Wage, Salary etc. I downloaded dataset from https://www.kaggle.com/thec03u5/fifa-18-demo-player-dataset.
+
+Dataset is tidy except for a few columns like the <b><i>Wage</i></b>, <b><i>Value</i></b> and <b><i>Preferred.Positions</i></b>. I would extract the numeric values from <b><i>Wage</i></b> and <b><i>Value</i></b> columns, and pull out the most preferred position from the <b><i>Preferred.Positions</i></b> column with the assumption the position are in order of preference.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+#load libraries
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(plotly)
+library(countrycode)
+library(GGally)
+```
+
+```{r echo=FALSE, Load_the_Data}
+# Load Data
+fifa <- read.csv("fifa18.csv")
+
+# columns of interest
+interest <- c("Name", "Age", "Photo", "Nationality", "Overall", "Potential", "Club", "Value", "Wage", "Preferred.Positions")
+
+# Subset Data
+fifa <- subset(fifa, select = interest)
+
+# remove interest character
+rm(interest)
+
+```
+
+
+```{r echo=FALSE, Clean_the_Data}
+
+# Regular expression to take out the acutal value.
+regexp <- "\\d+(\\.)?\\d+\\w"
+
+# clean Wage column
+fifa$Wage <- str_extract(fifa$Wage, regexp)
+
+# clean value column
+fifa$Value <- str_extract(fifa$Value, regexp)
+
+```
+
+```{r echo=FALSE,message=FALSE, warning=FALSE, Most_Preferred_Position_And_Countries}
+
+# take the most preferred position
+fifa$Preferred.Positions <- str_extract(fifa$Preferred.Positions, '\\w+')
+
+#change class of Nationality column to character
+fifa$Nationality <- as.character(fifa$Nationality)
+
+# countries in United Kingdom
+fifa$Nationality[fifa$Nationality %in% c('England', 'Northern Ireland', 'Scotland', 'Wales')] <- 'United Kingdom'
+
+# get continent
+fifa['Continent'] <- countrycode(fifa$Nationality, "country.name", "continent")
+
+```
+
+## Summary of Fifa 2018
+
+```{r echo=FALSE, Summary}
+
+# check summary
+summary(fifa)
+```
+### Observations 
+
+1. Age ranges from 16 to 47 years with a mean of 25.14 and a median 25. I am thinking of a normal distribution of Age. I would plot a histogram in univariate plots section to see if this is the case. 
+
+2. Looking at the Nationality column. Top 5 countries are all from from either Europe or South America. In the univariate plot section I would perform a group by operation by Nationality and plot on a map to visualize the distribution of players by country. 
+
+
+3. The Overall and Potential columns both range from 46 to 94 with mean 66 and 71 respectively. the 5 point difference in mean makes me wonder how many players have scope of improvement. I would like to explore difference of the two columns in the plot section below.I expect these two columns to be heavily correlated.
+
+# Univariate Plots Section
+
+```{r echo=FALSE, Univariate_Plots_Function}
+plot.fifa.univariate <- function(col){
+ggplot(aes(x=col), data = fifa) +
+  geom_histogram(binwidth = 1, fill=I("#099D99"), color=I("black")) +
+  scale_x_continuous() 
+}
+
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, Univariate_Plots_Age}
+
+gg1 <- plot.fifa.univariate(fifa$Age) + labs(title = "Age Distribution", x = "Age")
+ggplotly(gg1)
+rm(gg1)
+
+```
+
+
+<br/>
+Indeed the age distribution looks normal. 1522 players are Aged 25 years and most of the players are clustered around 25 years. I expected such observation.
+<hr>
+
+```{r echo=FALSE,warning=FALSE, message=FALSE, Univariate_Plots_Overall}
+gg2 <- plot.fifa.univariate(fifa$Overall) + labs (title = "Overall Distribution", x= "Overall")
+ggplotly(gg2)
+rm(gg2)
+```
+
+
+<br>
+No surprises here either most players have an Overall score of 66.
+
+<hr>
+```{r echo=FALSE, warning= FALSE, message=FALSE, Univariate_Plots_Potential}
+gg3 <- plot.fifa.univariate(fifa$Potential) + labs (title = "Potential Distribution", x = "Potential")
+ggplotly(gg3)
+rm(gg3)
+
+```
+
+
+<br>
+The plot shows that most players have a potential to score 70 points, it is 1 point less than the potential score mean.
+<hr>
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, Univariate_Plot_Potential_Overall_Difference}
+
+fifa$PO_Diff <- fifa$Potential - fifa$Overall
+
+gg4 <- plot.fifa.univariate(fifa$PO_Diff) + labs (title = "Potential - Overall", x="Difference")
+ggplotly(gg4)
+rm(gg4)
+```
+
+
+<br>
+Most players are already at their best. I observe that some players have a potential to score more than 10 points than they currently do. I wonder the belong to which countries. I would explore this further when I visualize the distributions on world map.
+<hr>
+
+
+```{r echo=FALSE, Wage_Value_Numeric}
+# Function to convert wage and value column to their respective numeric value. 
+
+wage.value.numeric <- function(col) {
+  
+  # extract digits
+  tmp <- as.numeric(str_extract(col, '\\d+(\\.)?\\d+'))
+  
+  # if the value ends in K then do nothing else it ends in M so multiplying by 1000, final result is in thousands
+  ifelse(str_to_lower(str_extract(col, '\\D')) == 'k',
+         tmp , 
+         tmp*1e3
+         )
+} 
+
+```
+
+```{r echo=FALSE, Univariate_Plots_Wage}
+fifa$num_Wage <- wage.value.numeric(fifa$Wage)
+summary(fifa$num_Wage)
+```
+
+
+<br>
+The wage variable has a lot of NAs. I will discard this variable from any further analysis.
+
+<hr>
+
+
+```{r echo=FALSE, Univariate_Plots_Value}
+fifa$num_Value <- wage.value.numeric(fifa$Value)
+summary(fifa$num_Value)
+
+```
+
+
+<br>
+The value variable is very intriguing. Median value is 625K, meaning half the players are valued less than 625K and half are more than 625K. The 3<sup>rd</sup> quartile is 1.6M and the maximum value is 123M. Infact I expected such observation, because most players are not valued in the millions but I would like to explore further about the high valued plyers. 
+
+<hr>
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Univariate_groupby}
+fifa.by_country <- fifa %>%
+  group_by(Nationality) %>%
+  summarise(mean_Overall = mean(as.numeric(Overall)), 
+            max_Overall = max(as.numeric(Overall)),
+            mean_Potential = mean(Potential),
+            max_Potential = max(Potential),
+            mean_Age = mean(as.numeric(Age)),
+            mean_Diff = mean(as.numeric(PO_Diff)),
+            max_Diff = max(as.numeric(PO_Diff)),
+            mean_Value = mean(as.numeric(num_Value), na.rm=TRUE),
+            max_Value = max(as.numeric(num_Value), na.rm=TRUE),
+            n=n()) %>%
+  arrange(desc(n)) %>%
+  ungroup()
+
+fifa.by_country$max_Value[is.na(fifa.by_country$max_Value)] <- 0
+fifa.by_country$max_Value[is.infinite(fifa.by_country$max_Value)] <- 0
+head(fifa.by_country)
+
+```
+
+<hr>
+
+
+```{r echo=FALSE, Univariate_Maps_Player_Count}
+
+# give state boundaries a white border
+l <- list(color = toRGB("white"), width = 2)
+# specify some map projection/options
+g <- list(
+  showframe = FALSE,
+  showcoastlines = FALSE,
+  projection = list(type = 'Mercator')
+)
+
+p1 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
+  add_trace(z=~n, color=n, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Player Distribution by Country",
+         geo = g)
+p1
+rm(p1)
+
+```
+
+<br>
+Clearly the most redder regions are in South America and Europe. UK has the highest number of players.Most of Asia and Africa are grey in color, meaning less than 60 players are from these regions. In the middle East, there is a stark contrast between Nations, Saudi Arabia is much redder than other nations. Surprising observations are from Canada and New Zealand, both are high income countries but are grey in color, perhaps population impacts the number of players from a country. 
+
+<hr>
+
+
+
+```{r echo=FALSE,message=FALSE, warning=FALSE, Univariate_Plot_PreferredPosition}
+
+gg5 <- ggplot(aes(x=Preferred.Positions), data = fifa) +
+  geom_bar(fill=I("#099D99"))
+
+ggplotly(gg5)
+rm(gg5)
+
+```
+<br>
+Center Back is the most preferred position and Right Wing Back is the least preferred position. I wonder if preferrence has an impact on value.
+<hr>
+
+# Univariate Analysis
+
+After exploring dataset for various variables. I have following conclusions:
+
+  1. Most of the players in FIFA 2018 belong to Europe or South America. UK has the highest number of players.
+  2. Most players have already attained their potential as their overall is equal to potential.
+  3. Center Back (CB) is the most preferred position amongst players and Right Wing Back (RWB) is the least preferred position.
+  
+
+### What is the structure of your dataset?
+
+The dataset is tidy. Apart from a few changes like extracting numbers from a variable, I don't need to make any more changes.
+
+### What is/are the main feature(s) of interest in your dataset?
+
+Most interesting features in the dataset are Nationality, Age, Potential, Overall, Value, and Preferred.Positions. A brief description of the features is as follows:
+
+
+  1. Nationality -> Nationality of the player.
+  2. Age -> Age of player
+  3. Potential -> The potential of player.
+  4. Overall -> The current overall standing of the player.
+  5. Value -> What is the players value in Thousands of pounds.
+  6. Preferred.Positions -> The preferred position of the player.
+
+### What other features in the dataset do you think will help support your \
+investigation into your feature(s) of interest?
+
+Other features like continent might be helpful, I would explore if it is.
+
+### Did you create any new variables from existing variables in the dataset?
+
+I created a variable PO_Diff, which accounts for difference in Potential and Overall. I also created a variable Continent.
+
+### Of the features you investigated, were there any unusual distributions? \
+Did you perform any operations on the data to tidy, adjust, or change the form \
+of the data? If so, why did you do this?
+
+I extracted numerical value from Wage and Value variable. Further I pulled out most preferred position from Preferred.Position variable.
+
+
+# Bivariate Plots Section
+
+
+```{r echo=FALSE, Bivariate_Maps_Mean_Age}
+
+p2 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
+  add_trace(z=~mean_Age, color=~mean_Age, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Mean Age by Country",
+         geo = g)
+p2
+rm(p2)
+
+```
+
+<br>
+Most regions of the world seem uniform when it comes to Age Distribution with the exception of nations in Africa. There are subtle differences though.
+<hr>
+
+```{r echo=FALSE, Bivariate_Maps_Mean_Overall}
+
+p3 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
+  add_trace(z=~mean_Overall, color=~mean_Overall, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Mean Overall Score by Country",
+         geo = g)
+p3
+rm(p3)
+
+```
+
+<br>
+Looking at the overall score across countries, one would think that Mozambique, Oman, and Syria are amongst the countries supplying the best players in the world. It appears fishy as it should, because these countries don't even have number of players in 2 digits. Syria only has 1, compare this with Brazil, with 812 players and 70.9 overall mean score. I will plot the map once again, using only nations that have atleast 200 players in fifa 2018. 
+<hr>
+
+```{r echo=FALSE, Bivariate_Maps_Mean_Overall_Sub}
+
+p4 <- plot_geo(subset(fifa.by_country, n > 199), locationmode = "country names") %>%
+  add_trace(z=~mean_Overall, color=~mean_Overall, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Mean Overall Score by Country",
+         geo = g)
+p4
+rm(p4)
+
+```
+
+<br>
+Now it is a better picture. Clearly Brazil and Spain appear to be nations that produce players with better mean overall score. 
+<hr>
+
+```{r echo=FALSE, Bivariate_Maps_Max_Overall}
+
+p5 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
+  add_trace(z=~max_Overall, color=~max_Overall, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Max Overall Score by Country",
+         geo = g)
+p5
+rm(p5)
+
+```
+<br>
+South America and Europe are more yellow in color compared to other continents. Asia and Africa are more blue side.
+<hr>
+
+```{r echo=FALSE, Bivariate_Maps_Mean_Potential}
+
+p6 <- plot_geo(subset(fifa.by_country, n>199), locationmode = "country names") %>%
+  add_trace(z=~mean_Potential, color=~mean_Potential, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Mean Potential Score by Country",
+         geo = g)
+p6
+rm(p6)
+
+```
+
+<br>
+I subset data straightaway, because many nations don't have considerable player count. From the map it is clear once again that South America and Europe tend to be on the higher side of the score. Interestingly Spain has the highest potential, and not Brazil.
+<hr>
+
+```{r echo=FALSE, Bivariate_Maps_Max_Potential}
+
+p7 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
+  add_trace(z=~max_Potential, color=~max_Potential, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Max Potential Score by Country",
+         geo = g)
+p7
+rm(p7)
+
+```
+
+<br>
+Portugal naturally has the highest potential of 94, as Cristiano Ronaldo already has an overall of 94. Spain top most potential is 92 even though it has the highest mean potential. 
+<hr>
+
+```{r echo=FALSE, Bivariate_Maps_Mean_Differnce}
+
+p8 <- plot_geo(subset(fifa.by_country, n>199), locationmode = "country names") %>%
+  add_trace(z=~mean_Diff, color=~mean_Diff, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Mean Potential Overall Difference Score by Country",
+         geo = g)
+p8
+rm(p8)
+
+```
+
+<br>
+Once again I took the subset of data, taking into consideration countries that have atleast 200 players listed in fifa. Brazil and Chile appear to be on the level at par with their potential.United Kingdom huge difference is a shocker. Perhaps it is because of younger players that it has.
+<hr>
+
+```{r echo=FALSE, Bivariate_Maps_Max_Difference}
+
+p9 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
+  add_trace(z=~max_Diff, color=~max_Diff, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Max Difference Score by Country",
+         geo = g)
+p9
+rm(p9)
+
+```
+
+
+<br>
+Western countries appear to be in possession of players most likely to improve. Countries in Asia and Africa, which already have most of their players with low Overall score, also have low Potential score.
+<hr>
+
+```{r echo=FALSE,message=FALSE, warning=FALSE, Bivariate_Maps_mean_Value}
+
+p10 <- plot_geo(subset(fifa.by_country, n>199), locationmode = "country names") %>%
+  add_trace(z=~mean_Value, color=~mean_Value, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Mean Value by Country",
+         geo = g)
+p10
+rm(p10)
+
+```
+
+<br>
+Once again Europe and South America are doing better than other continents. Lets see where the most valued player is from.
+<hr>
+
+```{r echo=FALSE,message=FALSE, warning=FALSE, Bivariate_Maps_max_Value}
+
+p11 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
+  add_trace(z=~max_Value, color=~max_Value, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Max Value by Country",
+         geo = g)
+p11
+rm(p11)
+
+```
+
+<br>
+Most Valued player is from Brazil.
+<hr>
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, Bivariate_Plots_GGpairs}
+
+ggp1 <- ggpairs(subset(fifa, select=c("num_Value", "Potential", "Overall", "Preferred.Positions", "Age", "Continent")))
+ggp1
+rm(ggp1)
+```
+<br>
+From above curve I see meaningful correlation between the following:
+
+  1. Potential and num_Value
+  2. Overall and num_Value
+  3. Overall and Potential
+  4. Age and Overall
+  
+
+<hr>
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, Bivariate_Plots_Potential_num_Value}
+
+gg6 <- ggplot(aes(x=Potential, y=num_Value), data = fifa ) +
+  geom_point(alpha = 0.1) +
+  geom_hline(yintercept = mean(fifa$Potential, na.rm=TRUE), alpha = 0.5) +
+  geom_smooth()
+#gg6
+ggplotly(gg6)
+```
+
+<br>
+Normally one would expect value of a player to rise with potential and looking at correlation it does appear so. However, there are players with potential above 90 and value only 975K. Maybe the player preferred position has an impact on salary.
+
+I also notice that the points are discrete. Lets plot a jitter plot to add some smootheness.
+<hr>
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, Bivariate_Plots_Potential_num_Value_Jitter}
+
+gg7 <- ggplot(aes(x=Potential, y=num_Value), data = fifa ) +
+  geom_jitter(alpha = 0.1, shape=21) +
+  geom_hline(yintercept = mean(fifa$Potential, na.rm=TRUE), alpha = 0.5) +
+  geom_smooth()
+#gg6
+ggplotly(gg7)
+rm(gg7)
+```
+
+<br>
+It is easier to point distribution now. I'll do the same for Overall variable.
+<hr>
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, Bivariate_Plots_Overall_num_Value}
+
+gg8 <- ggplot(aes(x=Overall, y=num_Value), data = fifa ) +
+  geom_point(alpha = 0.1) +
+  geom_hline(yintercept = mean(fifa$Overall, na.rm=TRUE), alpha = 0.5) +
+  geom_smooth()
+#gg8
+ggplotly(gg8)
+rm(gg8)
+
+```
+
+<br>
+Same story with overall, value does increase with overall score but there are some players with high overall score and less value. I wonder why are they undervalued? I would explore this further in multivariate plots.
+<hr>
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, Bivariate_Plots_Overall_num_Value_jitter}
+
+gg9 <- ggplot(aes(x=Overall, y=num_Value), data = fifa ) +
+  geom_jitter(alpha = 0.1, shape=21) +
+  geom_smooth()
+#gg6
+ggplotly(gg9)
+rm(gg9)
+```
+
+<br>
+Once again it is easier to see distribution with jitter.
+<hr>
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, Bivariate_Plots_Potential_Overall}
+
+gg10 <- ggplot(aes(x=Potential, y=Overall), data = fifa ) +
+  geom_point(alpha = 0.1) +
+  geom_smooth()
+#gg8
+ggplotly(gg10)
+rm(gg10)
+
+```
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, Bivariate_Plots_Potential_Overall_jitter}
+
+gg11 <- ggplot(aes(x=Potential, y=Overall), data = fifa ) +
+  geom_jitter(alpha = 0.1, shape=21) +
+  geom_smooth()
+#gg8
+ggplotly(gg11)
+rm(gg11)
+
+```
+
+# Bivariate Analysis
+
+> **Tip**: As before, summarize what you found in your bivariate explorations
+here. Use the questions below to guide your discussion.
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. How did the feature(s) of interest vary with other features in \
+the dataset?
+
+### Did you observe any interesting relationships between the other features \
+(not the main feature(s) of interest)?
+
+### What was the strongest relationship you found?
+
+
+# Multivariate Plots Section
+
+> **Tip**: Now it's time to put everything together. Based on what you found in
+the bivariate plots section, create a few multivariate plots to investigate
+more complex interactions between variables. Make sure that the plots that you
+create here are justified by the plots you explored in the previous section. If
+you plan on creating any mathematical models, this is the section where you
+will do that.
+
+```{r echo=FALSE, Multivariate_Plots}
+
+```
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. Were there features that strengthened each other in terms of \
+looking at your feature(s) of interest?
+
+### Were there any interesting or surprising interactions between features?
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the \
+strengths and limitations of your model.
+
+------
+
+# Final Plots and Summary
+
+> **Tip**: You've done a lot of exploration and have built up an understanding
+of the structure of and relationships between the variables in your dataset.
+Here, you will select three plots from all of your previous exploration to
+present here as a summary of some of your most interesting findings. Make sure
+that you have refined your selected plots for good titling, axis labels (with
+units), and good aesthetic choices (e.g. color, transparency). After each plot,
+make sure you justify why you chose each plot by describing what it shows.
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+
+```
+
+### Description One
+
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+
+```
+
+### Description Two
+
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+
+```
+
+### Description Three
+
+------
+
+# Reflection
+
+> **Tip**: Here's the final step! Reflect on the exploration you performed and
+the insights you found. What were some of the struggles that you went through?
+What went well? What was surprising? Make sure you include an insight into
+future work that could be done with the dataset.
+
+> **Tip**: Don't forget to remove this, and the other **Tip** sections before
+saving your final work and knitting the final report!
