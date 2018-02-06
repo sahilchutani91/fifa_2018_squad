@@ -19,6 +19,7 @@ library(stringr)
 library(plotly)
 library(countrycode)
 library(GGally)
+library(gridExtra)
 ```
 
 ```{r echo=FALSE, Load_the_Data}
@@ -261,11 +262,11 @@ After exploring dataset for various variables. I have following conclusions:
   3. Center Back (CB) is the most preferred position amongst players and Right Wing Back (RWB) is the least preferred position.
   
 
-### What is the structure of your dataset?
+
 
 The dataset is tidy. Apart from a few changes like extracting numbers from a variable, I don't need to make any more changes.
 
-### What is/are the main feature(s) of interest in your dataset?
+
 
 Most interesting features in the dataset are Nationality, Age, Potential, Overall, Value, and Preferred.Positions. A brief description of the features is as follows:
 
@@ -277,19 +278,13 @@ Most interesting features in the dataset are Nationality, Age, Potential, Overal
   5. Value -> What is the players value in Thousands of pounds.
   6. Preferred.Positions -> The preferred position of the player.
 
-### What other features in the dataset do you think will help support your \
-investigation into your feature(s) of interest?
-
+<br>
 Other features like continent might be helpful, I would explore if it is.
 
-### Did you create any new variables from existing variables in the dataset?
-
+<br>
 I created a variable PO_Diff, which accounts for difference in Potential and Overall. I also created a variable Continent.
 
-### Of the features you investigated, were there any unusual distributions? \
-Did you perform any operations on the data to tidy, adjust, or change the form \
-of the data? If so, why did you do this?
-
+<br>
 I extracted numerical value from Wage and Value variable. Further I pulled out most preferred position from Preferred.Position variable.
 
 
@@ -469,8 +464,9 @@ From above curve I see meaningful correlation between the following:
 gg6 <- ggplot(aes(x=Potential, y=num_Value), data = fifa ) +
   geom_point(alpha = 0.1) +
   geom_hline(yintercept = mean(fifa$Potential, na.rm=TRUE), alpha = 0.5) +
-  geom_smooth()
-#gg6
+  geom_smooth() +
+  labs(title="Value (1000s of Euro) Vs Potential", y="Value")
+
 ggplotly(gg6)
 rm(gg6)
 ```
@@ -486,7 +482,8 @@ I also notice that the points are discrete. Lets plot a jitter plot to add some 
 gg7 <- ggplot(aes(x=Potential, y=num_Value), data = fifa ) +
   geom_jitter(alpha = 0.1, shape=21) +
   geom_hline(yintercept = mean(fifa$Potential, na.rm=TRUE), alpha = 0.5) +
-  geom_smooth()
+  geom_smooth() +
+  labs(title="Value (1000s of Euro) Vs Potential", y="Value")
 #gg6
 ggplotly(gg7)
 rm(gg7)
@@ -501,8 +498,9 @@ It is easier to point distribution now. I'll do the same for Overall variable.
 gg8 <- ggplot(aes(x=Overall, y=num_Value), data = fifa ) +
   geom_point(alpha = 0.1) +
   geom_hline(yintercept = mean(fifa$Overall, na.rm=TRUE), alpha = 0.5) +
-  geom_smooth()
-#gg8
+  geom_smooth() +
+  labs(title = "Value (1000s of Euro) Vs Overall", y="Value")
+
 ggplotly(gg8)
 rm(gg8)
 
@@ -516,8 +514,9 @@ Same story with overall, value does increase with overall score but there are so
 
 gg9 <- ggplot(aes(x=Overall, y=num_Value), data = fifa ) +
   geom_jitter(alpha = 0.1, shape=21) +
-  geom_smooth()
-#gg6
+  geom_smooth() +
+  labs(title="Value (1000s of Euro) Vs Overall", y="Value")
+
 ggplotly(gg9)
 rm(gg9)
 ```
@@ -530,8 +529,9 @@ Once again it is easier to see distribution with jitter.
 
 gg10 <- ggplot(aes(x=Potential, y=Overall), data = fifa ) +
   geom_point(alpha = 0.1) +
-  geom_smooth()
-#gg8
+  geom_smooth() +
+  labs(title="Overall Vs Potential")
+
 ggplotly(gg10)
 rm(gg10)
 
@@ -543,7 +543,8 @@ rm(gg10)
 gg11 <- ggplot(aes(x=Potential, y=Overall), data = fifa ) +
   geom_jitter(alpha = 0.1, shape=21) +
   geom_abline() +
-  geom_smooth()
+  geom_smooth() +
+  labs(title = "Overall Vs Potential")
 #gg8
 ggplotly(gg11)
 rm(gg11)
@@ -551,93 +552,206 @@ rm(gg11)
 ```
 
 <br>
-The darkest points lie on x=y ab line, meaning that these players have attained their potential. Interestilngly there are many points below this line. These players are worth looking into.
+The darkest points lie on x=y ab line, meaning that these players have attained their potential. Interestilngly there are many points below this line. 
 <hr>
 
+```{r echo=FALSE, warning=FALSE, message=FALSE, Bivariate_Plots_Overall_Age}
 
+gg12 <- ggplot(aes(x=Age, y=Overall), data = fifa ) +
+  geom_point(alpha = 0.1) +
+  geom_smooth() +
+  labs(title = "Overall Vs Age")
+#gg8
+ggplotly(gg12)
+rm(gg12)
+
+```
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, Bivariate_Plots_Overall_Age_jitter}
+
+gg13 <- ggplot(aes(x=Age, y=Overall), data = fifa ) +
+  geom_jitter(alpha = 0.5, shape=21) +
+  geom_smooth() +
+  labs(title="Overall Vs Age")
+
+ggplotly(gg13)
+rm(gg13)
+
+```
+
+<br>
+A beautiful curve. Football is physically intensive, so one would expect a player to lose overall points with age. However in the early stages perhaps because of lack of experience player gains points with age and then after mid twenties the curve tends to become uniform. When the effect of age starts taking place somewhere around 33 the overall points start to decrease. the curve confirms the intuition about the effect of age on players overall performance. 
+<hr>
 
 # Bivariate Analysis
 
-> **Tip**: As before, summarize what you found in your bivariate explorations
-here. Use the questions below to guide your discussion.
+I have made following observations :
 
-### Talk about some of the relationships you observed in this part of the \
-investigation. How did the feature(s) of interest vary with other features in \
-the dataset?
+  1. Of all the conitnents South America and Europe are the best in Overall scores both in terms of mean overall score and max overall score.
+  2. Europe and South America also have the higher valued players compared to other continents.At 123 Million Euro Brazil hast the highest valued player.
+  3. Interestingly even with high overall score, many players are under valued. Maybe it is because of their preferrence of position or nationality. I will explore this point further.
 
-### Did you observe any interesting relationships between the other features \
-(not the main feature(s) of interest)?
-
-### What was the strongest relationship you found?
 
 
 # Multivariate Plots Section
 
-> **Tip**: Now it's time to put everything together. Based on what you found in
-the bivariate plots section, create a few multivariate plots to investigate
-more complex interactions between variables. Make sure that the plots that you
-create here are justified by the plots you explored in the previous section. If
-you plan on creating any mathematical models, this is the section where you
-will do that.
 
-```{r echo=FALSE, Multivariate_Plots}
+```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots}
+
+m1 <- ggplot(aes(x=Preferred.Positions, y=Age), data = fifa) +
+  geom_boxplot() +
+  stat_summary(fun.y=mean, geom="point", shape=4)
+
+ggplotly(m1)
+rm(m1)
 
 ```
 
+```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_Age_Value_Position}
+
+m2 <- ggplot(aes(x=Age, y=num_Value), data = fifa) +
+  geom_line(stat = "summary", fun.y=mean) +
+  facet_wrap(~Preferred.Positions, ncol=3) +
+  labs(title = "Value Vs Age", y="Value") +
+  theme(panel.spacing = unit(1, "lines"))
+
+ggplotly(m2)
+rm(m2)
+
+```
+
+
+<br> 
+Looking at the plots above I see that defensive positions like LB and RB are valued less. Forward and Strike positions are worth more. Here is a link for description of positions https://en.wikipedia.org/wiki/Association_football_positions. 
+
+<hr>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_Overall_Value_Position}
+
+m3 <- ggplot(aes(x=Overall, y=num_Value), data = fifa) +
+  geom_line(stat = "summary", fun.y=mean) +
+  facet_wrap(~Preferred.Positions, ncol=3) +
+  labs(title = "Value Vs Overall", y="Value") +
+  theme(panel.spacing = unit(1, "lines"))
+
+ggplotly(m3)
+rm(m3)
+
+```
+
+<br>
+For the same score a forward preferrence player is worth more than those who prefer a more center position or defensive position.
+<hr>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_Overall_Value_Continent}
+
+m4 <- ggplot(aes(x=Overall, y=num_Value), data = subset(fifa, !is.na(fifa$Continent))) +
+  geom_line(stat = "summary", fun.y=mean) +
+  facet_wrap(~Continent, ncol=3) +
+  labs(title = "Value Vs Overall", y="Value") +
+  theme(panel.spacing = unit(1, "lines"))
+
+ggplotly(m4)
+rm(m4)
+
+```
+
+
+<br>
+A players value does not seem to be dependent on his continent.
+<hr>
+
 # Multivariate Analysis
 
-### Talk about some of the relationships you observed in this part of the \
-investigation. Were there features that strengthened each other in terms of \
-looking at your feature(s) of interest?
+The following relationships have been observed:
+  
+  1. A players preferred position affects his worth. If he prefers a forward position, for the same overall score he is worth more than the players who prefer Middle of Defensive positions.
+  2. A players continent does not seem to be effecting his worth. 
 
-### Were there any interesting or surprising interactions between features?
+<br>
 
-### OPTIONAL: Did you create any models with your dataset? Discuss the \
-strengths and limitations of your model.
-
+<hr>
+<br>
+<br>
 ------
 
 # Final Plots and Summary
 
-> **Tip**: You've done a lot of exploration and have built up an understanding
-of the structure of and relationships between the variables in your dataset.
-Here, you will select three plots from all of your previous exploration to
-present here as a summary of some of your most interesting findings. Make sure
-that you have refined your selected plots for good titling, axis labels (with
-units), and good aesthetic choices (e.g. color, transparency). After each plot,
-make sure you justify why you chose each plot by describing what it shows.
 
 ### Plot One
-```{r echo=FALSE, Plot_One}
+
+```{r echo=FALSE,warning=FALSE, message=FALSE, Plot_One}
+p1 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
+  add_trace(z=~n, color=n, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  layout(title = "Player Distribution by Country",
+         geo = g)
+p1
+rm(p1)
 
 ```
 
 ### Description One
 
+I chose this plot because it clearly shows how the players in FIFA 2018 are distributed by country. Most of the players are from South America and Europe. UK has the highest number of players featured. 
+
 
 ### Plot Two
-```{r echo=FALSE, Plot_Two}
+```{r echo=FALSE, warning=FALSE, message=FALSE, Plot_Two}
+gg13 <- ggplot(aes(x=Age, y=Overall), data = fifa ) +
+  geom_jitter(alpha = 0.5, shape=21) +
+  geom_smooth() +
+  labs(title="Overall Vs Age")
+
+ggplotly(gg13)
+rm(gg13)
 
 ```
 
 ### Description Two
 
+Even though I expected that a player would be worth less in the initial years of his career, and then stabilize in his prime years and eventually going down in worth because of his age. The curve reaffirms my intuition. It shows that for younger ages (16-22) the players worth rises with age, it then becomes stable and eventually from starts a downward curve (age 33). Maybe a younger player gains popularity and thus increases his worth or he improves his overall score and thus becoming more valuable. A good example is UK, UK has the youngest mean age and highest mean potential.
+
 
 ### Plot Three
-```{r echo=FALSE, Plot_Three}
+```{r echo=FALSE, warning=FALSE, message=FALSE, Plot_Three}
+m4 <- ggplot(aes(x=Overall, y=num_Value), data = subset(fifa, !is.na(fifa$Continent))) +
+  geom_line(stat = "summary", fun.y=mean) +
+  facet_wrap(~Continent, ncol=3) +
+  labs(title = "Value Vs Overall", y="Value") +
+  theme(panel.spacing = unit(1, "lines"))
 
+ggplotly(m4)
+rm(m4)
 ```
 
 ### Description Three
+
+<br>
+I am choosing the above plot as the final descriptive plot because it completes the story. While a players overall score is a good indicator of his worth, his preferred position impacts his worth immensely. Forward playing players are more likely to be worth more at the same overall score than Middle or Backward playing players.
 
 ------
 
 # Reflection
 
-> **Tip**: Here's the final step! Reflect on the exploration you performed and
-the insights you found. What were some of the struggles that you went through?
-What went well? What was surprising? Make sure you include an insight into
-future work that could be done with the dataset.
+Overall I selected important columns that would allow me to form insights about characteristics of players featured in FIFA 2018.
 
-> **Tip**: Don't forget to remove this, and the other **Tip** sections before
-saving your final work and knitting the final report!
+## Conclusion
+
+Most players featured in FIFA 2018 are from South America and Europe. Most of them are clustered around 25 years of age. And finally most of them have their overall performance score as 66. Interestingly most players are at their best. Younger player have a better chance of improving. A players value is affected by his preferred position. These are the conclusions that I have made after exploratory analysis of the dataset of FIFA 2018.
+
+## Limitations
+
+The dataset is limited as it only pertains to data of FIFA 2018. I would have loved to explore evolution of players overall performance feature and value feature over a period of time. The wage column was mostly missing. I could not form any meaningful insights through it.
+
+## Future Work
+
+The analysis that I have performed can be extended further to produce a best squad with budget. It could also be extended to address questions such as if a 2-3-5 (pyramid) formation is better than a 4-2-4 formation for the squad. Or if performance of team would improve if the cclub invests in a new player.
+
+<hr>
+# References
+
+1. https://plot.ly/r/
+2. https://www.kaggle.com/thec03u5/fifa-18-demo-player-dataset
+3. https://en.wikipedia.org/wiki/Association_football_positions
+4. https://en.wikipedia.org/wiki/Formation_(association_football)#2%E2%80%933%E2%80%935_(Pyramid)
