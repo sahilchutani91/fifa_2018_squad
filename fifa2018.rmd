@@ -27,7 +27,8 @@ library(gridExtra)
 fifa <- read.csv("fifa18.csv")
 
 # columns of interest
-interest <- c("Name", "Age", "Photo", "Nationality", "Overall", "Potential", "Club", "Value", "Wage", "Preferred.Positions")
+interest <- c("Name", "Age", "Photo", "Nationality", "Overall", "Potential", 
+              "Club", "Value", "Wage", "Preferred.Positions")
 
 # Subset Data
 fifa <- subset(fifa, select = interest)
@@ -60,7 +61,9 @@ fifa$Preferred.Positions <- str_extract(fifa$Preferred.Positions, '\\w+')
 fifa$Nationality <- as.character(fifa$Nationality)
 
 # countries in United Kingdom
-fifa$Nationality[fifa$Nationality %in% c('England', 'Northern Ireland', 'Scotland', 'Wales')] <- 'United Kingdom'
+fifa$Nationality[fifa$Nationality %in% 
+                   c('England', 'Northern Ireland', 
+                     'Scotland', 'Wales')] <- 'United Kingdom'
 
 # get continent
 fifa['Continent'] <- countrycode(fifa$Nationality, "country.name", "continent")
@@ -96,7 +99,8 @@ ggplot(aes(x=col), data = fifa) +
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, Univariate_Plots_Age}
 
-gg1 <- plot.fifa.univariate(fifa$Age) + labs(title = "Age Distribution", x = "Age")
+gg1 <- plot.fifa.univariate(fifa$Age) + 
+  labs(title = "Age Distribution", x = "Age")
 ggplotly(gg1)
 rm(gg1)
 
@@ -104,11 +108,13 @@ rm(gg1)
 
 
 <br/>
-Indeed the age distribution looks normal. 1522 players are Aged 25 years and most of the players are clustered around 25 years. I expected such observation.
+Indeed the age distribution looks normal. 1522 players are Aged 25 years and 
+most of the players are clustered around 25 years. I expected such observation.
 <hr>
 
 ```{r echo=FALSE,warning=FALSE, message=FALSE, Univariate_Plots_Overall}
-gg2 <- plot.fifa.univariate(fifa$Overall) + labs (title = "Overall Distribution", x= "Overall")
+gg2 <- plot.fifa.univariate(fifa$Overall) + 
+  labs (title = "Overall Distribution", x= "Overall")
 ggplotly(gg2)
 rm(gg2)
 ```
@@ -134,7 +140,8 @@ The plot shows that most players have a potential to score 70 points, it is 1 po
 
 fifa$PO_Diff <- fifa$Potential - fifa$Overall
 
-gg4 <- plot.fifa.univariate(fifa$PO_Diff) + labs (title = "Potential - Overall", x="Difference")
+gg4 <- plot.fifa.univariate(fifa$PO_Diff) + 
+  labs (title = "Potential - Overall", x="Difference")
 ggplotly(gg4)
 rm(gg4)
 ```
@@ -153,7 +160,8 @@ wage.value.numeric <- function(col) {
   # extract digits
   tmp <- as.numeric(str_extract(col, '\\d+(\\.)?\\d+'))
   
-  # if the value ends in K then do nothing else it ends in M so multiplying by 1000, final result is in thousands
+  # if the value ends in K then do nothing else it ends in M 
+  #so multiplying by 1000, final result is in thousands
   ifelse(str_to_lower(str_extract(col, '\\D')) == 'k',
          tmp , 
          tmp*1e3
@@ -162,7 +170,7 @@ wage.value.numeric <- function(col) {
 
 ```
 
-```{r echo=FALSE, Univariate_Plots_Wage}
+```{r echo=FALSE, Summary_Wage}
 fifa$num_Wage <- wage.value.numeric(fifa$Wage)
 summary(fifa$num_Wage)
 ```
@@ -174,7 +182,19 @@ The wage variable has a lot of NAs. I will discard this variable from any furthe
 <hr>
 
 
-```{r echo=FALSE, Univariate_Plots_Value}
+```{r echo=FALSE,warning=FALSE, message=FALSE, Univariate_Plots_Wage}
+w <- ggplot(aes(x=as.numeric(num_Wage)), data = fifa) +
+  geom_histogram(color=I("black"), fill=I("#099D99")) +
+  labs(title="Wage Distribution", x="Wage")
+ggplotly(w)
+rm(w)
+```
+
+<br>
+The plot above looks positively skewed but I will not make any conclusions based on it because many values are missing.
+<hr>
+
+```{r echo=FALSE, Summary_Value}
 fifa$num_Value <- wage.value.numeric(fifa$Value)
 summary(fifa$num_Value)
 
@@ -186,7 +206,17 @@ The value variable is very intriguing. Median value is 625K, meaning half the pl
 
 <hr>
 
+```{r echo=FALSE,warning=FALSE, message=FALSE, Univariate_Plots_Value}
+v <- ggplot(aes(x=as.numeric(num_Value)), data = fifa) +
+  geom_histogram(color=I("black"), fill=I("#099D99")) +
+  labs(title="Value Distribution", x="Value")
+ggplotly(v)
+rm(v)
+```
 
+<br>
+It is an intresting plot but a one that should be expected. Given the competing nature of fifa most players are not valued in 100s of million dollars, as can be seen from the plot. The plot is positively skewed as expected.
+<hr>
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Univariate_groupby}
 fifa.by_country <- fifa %>%
@@ -225,7 +255,8 @@ g <- list(
 )
 
 p1 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
-  add_trace(z=~n, color=n, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  add_trace(z=~n, color=n, text=~Nationality, 
+            locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Player Distribution by Country",
          geo = g)
 p1
@@ -294,7 +325,8 @@ I extracted numerical value from Wage and Value variable. Further I pulled out m
 ```{r echo=FALSE, Bivariate_Maps_Mean_Age}
 
 p2 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
-  add_trace(z=~mean_Age, color=~mean_Age, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  add_trace(z=~mean_Age, color=~mean_Age, 
+          text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Mean Age by Country",
          geo = g)
 p2
@@ -309,7 +341,8 @@ Most regions of the world seem uniform when it comes to Age Distribution with th
 ```{r echo=FALSE, Bivariate_Maps_Mean_Overall}
 
 p3 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
-  add_trace(z=~mean_Overall, color=~mean_Overall, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  add_trace(z=~mean_Overall, color=~mean_Overall, text=~Nationality, 
+            locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Mean Overall Score by Country",
          geo = g)
 p3
@@ -323,8 +356,10 @@ Looking at the overall score across countries, one would think that Mozambique, 
 
 ```{r echo=FALSE, Bivariate_Maps_Mean_Overall_Sub}
 
-p4 <- plot_geo(subset(fifa.by_country, n > 199), locationmode = "country names") %>%
-  add_trace(z=~mean_Overall, color=~mean_Overall, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+p4 <- plot_geo(subset(fifa.by_country, n > 199), 
+               locationmode = "country names") %>%
+  add_trace(z=~mean_Overall, color=~mean_Overall, text=~Nationality, 
+            locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Mean Overall Score by Country",
          geo = g)
 p4
@@ -339,7 +374,8 @@ Now it is a better picture. Clearly Brazil and Spain appear to be nations that p
 ```{r echo=FALSE, Bivariate_Maps_Max_Overall}
 
 p5 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
-  add_trace(z=~max_Overall, color=~max_Overall, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  add_trace(z=~max_Overall, color=~max_Overall, 
+            text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Max Overall Score by Country",
          geo = g)
 p5
@@ -352,8 +388,10 @@ South America and Europe are more yellow in color compared to other continents. 
 
 ```{r echo=FALSE, Bivariate_Maps_Mean_Potential}
 
-p6 <- plot_geo(subset(fifa.by_country, n>199), locationmode = "country names") %>%
-  add_trace(z=~mean_Potential, color=~mean_Potential, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+p6 <- plot_geo(subset(fifa.by_country, n>199), 
+               locationmode = "country names") %>%
+  add_trace(z=~mean_Potential, color=~mean_Potential, text=~Nationality, 
+            locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Mean Potential Score by Country",
          geo = g)
 p6
@@ -368,7 +406,8 @@ I subset data straightaway, because many nations don't have considerable player 
 ```{r echo=FALSE, Bivariate_Maps_Max_Potential}
 
 p7 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
-  add_trace(z=~max_Potential, color=~max_Potential, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  add_trace(z=~max_Potential, color=~max_Potential, text=~Nationality, 
+            locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Max Potential Score by Country",
          geo = g)
 p7
@@ -382,8 +421,10 @@ Portugal naturally has the highest potential of 94, as Cristiano Ronaldo already
 
 ```{r echo=FALSE, Bivariate_Maps_Mean_Differnce}
 
-p8 <- plot_geo(subset(fifa.by_country, n>199), locationmode = "country names") %>%
-  add_trace(z=~mean_Diff, color=~mean_Diff, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+p8 <- plot_geo(subset(fifa.by_country, n>199), 
+               locationmode = "country names") %>%
+  add_trace(z=~mean_Diff, color=~mean_Diff, text=~Nationality, 
+            locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Mean Potential Overall Difference Score by Country",
          geo = g)
 p8
@@ -398,7 +439,8 @@ Once again I took the subset of data, taking into consideration countries that h
 ```{r echo=FALSE, Bivariate_Maps_Max_Difference}
 
 p9 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
-  add_trace(z=~max_Diff, color=~max_Diff, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  add_trace(z=~max_Diff, color=~max_Diff, text=~Nationality, 
+            locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Max Difference Score by Country",
          geo = g)
 p9
@@ -413,8 +455,10 @@ Western countries appear to be in possession of players most likely to improve. 
 
 ```{r echo=FALSE,message=FALSE, warning=FALSE, Bivariate_Maps_mean_Value}
 
-p10 <- plot_geo(subset(fifa.by_country, n>199), locationmode = "country names") %>%
-  add_trace(z=~mean_Value, color=~mean_Value, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+p10 <- plot_geo(subset(fifa.by_country, n>199), 
+                locationmode = "country names") %>%
+  add_trace(z=~mean_Value, color=~mean_Value, text=~Nationality, 
+            locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Mean Value by Country",
          geo = g)
 p10
@@ -429,7 +473,8 @@ Once again Europe and South America are doing better than other continents. Lets
 ```{r echo=FALSE,message=FALSE, warning=FALSE, Bivariate_Maps_max_Value}
 
 p11 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
-  add_trace(z=~max_Value, color=~max_Value, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  add_trace(z=~max_Value, color=~max_Value, text=~Nationality, 
+            locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Max Value by Country",
          geo = g)
 p11
@@ -443,7 +488,8 @@ Most Valued player is from Brazil.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, Bivariate_Plots_GGpairs}
 
-ggp1 <- ggpairs(subset(fifa, select=c("num_Value", "Potential", "Overall", "Preferred.Positions", "Age", "Continent")))
+ggp1 <- ggpairs(subset(fifa, select=c("num_Value", "Potential", "Overall", 
+                                  "Preferred.Positions", "Age", "Continent")))
 ggp1
 rm(ggp1)
 ```
@@ -662,6 +708,28 @@ rm(m4)
 A players value does not seem to be dependent on his continent.
 <hr>
 
+```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_Age_Potential_Value}
+
+fifa$Value.bucket = cut( as.numeric (fifa$num_Value),
+                            c(0, 20500, 41000 , 61500, 82000,123000))
+fifa$Age.bucket = cut( as.numeric (fifa$Age),
+                            c(0, 18, 25 , 30, 60))
+
+  ggplot(aes(x = Age.bucket, 
+           y = Overall  , fill =  Value.bucket ), 
+       data = fifa) +
+      geom_boxplot(alpha = 0.8 ) +
+   scale_fill_brewer(type='seq',
+                   guide=guide_legend(title='Value')) +
+    labs(title="Overall vs Age", x="Age")
+
+```
+
+
+<br>
+Players Worth more have higher Overall score and tend to be aged between 25 and 30.
+<hr>
+
 # Multivariate Analysis
 
 The following relationships have been observed:
@@ -683,7 +751,8 @@ The following relationships have been observed:
 
 ```{r echo=FALSE,warning=FALSE, message=FALSE, Plot_One}
 p1 <- plot_geo(fifa.by_country, locationmode = "country names") %>%
-  add_trace(z=~n, color=n, text=~Nationality, locations=~Nationality, marker=list(line=l)) %>%
+  add_trace(z=~n, color=n, text=~Nationality, 
+            locations=~Nationality, marker=list(line=l)) %>%
   layout(title = "Player Distribution by Country",
          geo = g)
 p1
@@ -715,7 +784,8 @@ Even though I expected that a player would be worth less in the initial years of
 
 ### Plot Three
 ```{r echo=FALSE, warning=FALSE, message=FALSE, Plot_Three}
-m4 <- ggplot(aes(x=Overall, y=num_Value), data = subset(fifa, !is.na(fifa$Continent))) +
+m4 <- ggplot(aes(x=Overall, y=num_Value), 
+             data = subset(fifa, !is.na(fifa$Continent))) +
   geom_line(stat = "summary", fun.y=mean) +
   facet_wrap(~Continent, ncol=3) +
   labs(title = "Value Vs Overall", y="Value") +
