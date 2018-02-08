@@ -784,15 +784,14 @@ Even though I expected that a player would be worth less in the initial years of
 
 ### Plot Three
 ```{r echo=FALSE, warning=FALSE, message=FALSE, Plot_Three}
-m4 <- ggplot(aes(x=Overall, y=num_Value), 
-             data = subset(fifa, !is.na(fifa$Continent))) +
+m3 <- ggplot(aes(x=Overall, y=num_Value), data = fifa) +
   geom_line(stat = "summary", fun.y=mean) +
-  facet_wrap(~Continent, ncol=3) +
+  facet_wrap(~Preferred.Positions, ncol=3) +
   labs(title = "Value Vs Overall", y="Value") +
   theme(panel.spacing = unit(1, "lines"))
 
-ggplotly(m4)
-rm(m4)
+ggplotly(m3)
+rm(m3)
 ```
 
 ### Description Three
